@@ -1,4 +1,5 @@
 import csv
+import os
 from PyQt6.QtWidgets import *
 from gui import *
 
@@ -22,6 +23,7 @@ class Logic(QMainWindow, Ui_mainWindow):
         try:
             id_num = int(id_num)
         except ValueError:
+            self.exception_label.setStyleSheet('color: red;')
             self.exception_label.setText('ID must be a number')
             return None
         return id_num
@@ -39,13 +41,15 @@ class Logic(QMainWindow, Ui_mainWindow):
         elif self.third_party_radioButton.isChecked():
             candidate = self.third_party_entry.text().strip().capitalize()
         else:
+            self.exception_label.setStyleSheet('color: red;')
             self.exception_label.setText("Please select a candidate")
             return None
 
         if candidate and candidate.isalpha():#validates the string is not empty and is a regular name
             return candidate
         else:
-            self.exception_label.setText('3rd party must have regular name')
+            self.exception_label.setStyleSheet('color: red;')
+            self.exception_label.setText('Invalid 3rd party name')
             return None
 
 
@@ -66,21 +70,43 @@ class Logic(QMainWindow, Ui_mainWindow):
             return
 
         if id_num in self.id_list:#validates if the ID has been used. If not, then the ID is logged and can't be used again
+            self.exception_label.setStyleSheet('color: red;')
             self.exception_label.setText('ID number has already voted')
             return
         else:
             self.id_list.append(id_num)
 
-        if candidate in self.votes:#increments vote or adds candidate with a starting vote of 1
-            self.votes[candidate] += 1
-        else:
-            self.votes[candidate] = 1
 
+        self.exception_label.setStyleSheet('color: green;')
         self.exception_label.setText('Your vote has been cast')
 
-        file = 'total_votes.csv'
-        with open(file, 'w', newline='')as file:
+        file_name = 'total_votes.csv'
+
+        if os.path.exists(file_name):#checks if file already exists
+            with open(file_name, 'r', newline='') as file:
+                reader = csv.DictReader(file)#built-in method to read row as dictionary key:value
+                for row in reader:
+                    name = row['Candidate']
+                    votes = int(row['Votes'])
+                    self.votes[name] = votes#loads all previous values from last instance to the dictionary
+
+            if candidate in self.votes:
+                self.votes[candidate] += 1
+            else:
+                self.votes[candidate] = 1
+
+        with open(file_name, 'w', newline='')as file:
             content = csv.writer(file)
             content.writerow(['Candidate', 'Votes'])
             for candidate, votes in self.votes.items():
                 content.writerow([candidate, votes])
+
+        self.voter_ID.clear()#block clears all inputs and radio buttons and puts cursor back in ID input
+        self.third_party_entry.clear()
+
+        if self.buttonGroup1.checkedButton() is not None:
+            self.buttonGroup1.setExclusive(False)
+            self.buttonGroup1.checkedButton().setChecked(False)
+            self.buttonGroup1.setExclusive(True)
+
+        self.voter_ID.setFocus()
