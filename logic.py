@@ -84,18 +84,18 @@ class Logic(QMainWindow, Ui_mainWindow):
 
         if os.path.exists(file_name):#checks if file already exists
             with open(file_name, 'r', newline='') as file:
-                reader = csv.DictReader(file)#built-in method to read row as dictionary key:value
-                for row in reader:
+                reader = csv.DictReader(file)#built-in method to read row as dictionary key:value (found on https://docs.python.org/3/library/csv.html)
+                for row in reader:#Takes data from existing csv and reads it into the 'votes' dictionary
                     name = row['Candidate']
                     votes = int(row['Votes'])
                     self.votes[name] = votes#loads all previous values from last instance to the dictionary
 
-            if candidate in self.votes:
-                self.votes[candidate] += 1
-            else:
-                self.votes[candidate] = 1
+        if candidate in self.votes:
+            self.votes[candidate] += 1
+        else:
+            self.votes[candidate] = 1
 
-        with open(file_name, 'w', newline='')as file:
+        with open(file_name, 'w', newline='')as file:#updates dictionary data to the CSV file
             content = csv.writer(file)
             content.writerow(['Candidate', 'Votes'])
             for candidate, votes in self.votes.items():
